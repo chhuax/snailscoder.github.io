@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>高并发系统：池化技术-数据库连接池 - 蜗码</title>
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<link rel="canonical" href="https://snailscoder.com/2020/04/11/architect/105/">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<meta name="description" content="数据库连接池与系统线程池不同，数据库连接池并不控制应用端和数据库端的线程池的大小。而且每个数据库连接池的配置只是针对自己所在的应用服务进程，限制的是同一个进程内可以访问数据库的并行线程数目。 数据库连接池好处节省了创建数据库连接的时间，通常这个时间大大超过处理数据访问请求的时间。统一管理数据库请求连接，避免了过多连接或频繁创建&#x2F;删除连接带来的性能问题。监控了数据库连接的运行状态和错误报告，减少了应">
+<meta property="og:type" content="website">
+<meta property="og:title" content="高并发系统：池化技术-数据库连接池">
+<meta property="og:url" content="https://snailscoder.com/2020/04/11/architect/105/index.html">
+<meta property="og:site_name" content="蜗码">
+<meta property="og:description" content="数据库连接池与系统线程池不同，数据库连接池并不控制应用端和数据库端的线程池的大小。而且每个数据库连接池的配置只是针对自己所在的应用服务进程，限制的是同一个进程内可以访问数据库的并行线程数目。 数据库连接池好处节省了创建数据库连接的时间，通常这个时间大大超过处理数据访问请求的时间。统一管理数据库请求连接，避免了过多连接或频繁创建&#x2F;删除连接带来的性能问题。监控了数据库连接的运行状态和错误报告，减少了应">
+<meta property="og:image" content="https://blogimg-1254014761.cos.ap-beijing.myqcloud.com/2020/04/12/mg6431.jpg">
+<meta property="article:published_time" content="2020-04-11T22:49:25.000Z">
+<meta property="article:modified_time" content="2020-04-12T03:16:58.028Z">
+<meta property="article:author" content="蜗码">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="高并发">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blogimg-1254014761.cos.ap-beijing.myqcloud.com/2020/04/12/mg6431.jpg">
+
+<script type="application/ld+json">[{"@context":"http://schema.org","@type":"WebSite","publisher":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"url":"https://snailscoder.com","image":"https://snailscoder.com/images/icons/icon-128x128.png","description":"蜗牛编码，一步一个脚印的向自己的目标爬行。","author":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"inLanguage":{"@type":"Language","alternateName":"zh-Hans"}},{"@context":"http://schema.org","@type":"Article","articleSection":"架构","url":"https://snailscoder.com/2020/04/12/architect/105/","headline":"高并发系统：池化技术-数据库连接池","image":"https://blogimg-1254014761.cos.ap-beijing.myqcloud.com/2020/04/12/mg6431.jpg","datePublished":"2020-04-11T22:49:25.000Z","dateModified":"2020-04-12T03:16:58.028Z","keywords":"架构,高并发,MySQL","description":"蜗牛编码，一步一个脚印的向自己的目标爬行。","publisher":{"@type":"Organization","name":"蜗码","logo":{"@type":"ImageObject","url":"https://snailscoder.com/images/icons/icon-128x128.png"}},"author":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"inLanguage":{"@type":"Language","alternateName":"zh-Hans"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://snailscoder.com/2020/04/12/architect/105/"},"thumbnailUrl":"https://blogimg-1254014761.cos.ap-beijing.myqcloud.com/2020/04/12/mg6431.jpg"}]</script>
+
+
+<link href="//fonts.googleapis.com/css?family=Baloo+Bhaijaan|Inconsolata|Josefin+Sans|Montserrat" rel="stylesheet">
+<link href="//unpkg.com/gitalk/dist/gitalk.css" rel="stylesheet">
+<link href="/styles.e4c22be5bb2c26eab146.css" rel="stylesheet">
+
+<link rel="stylesheet" href="/theme.2e79e33aa2410c55e2e1.css" is="theme">
+
+
+<script src="/config.dd7e25d55421f23cf33f.js"></script>
+
+
+<script async src="//www.googletagmanager.com/gtag/js?id=ca-pub-5041852716594969"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','ca-pub-5041852716594969');</script>
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body lang="zh-Hans">
+<is-a></is-a>
+<script src="//unpkg.com/gitalk/dist/gitalk.min.js"></script>
+<script src="//blogimg-1254014761.cos.ap-beijing.myqcloud.com/js/md5.min.js"></script>
+<script type="text/x-mathjax-config">MathJax.Hub.Config({
+  showProcessingMessages: false,
+  messageStyle: 'none',
+  tex2jax: { inlineMath: [['s;,'s;], ['\\(','\\)']] }
+})</script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script src="/runtime.1720a40670866f12654e.js"></script>
+<script src="/polyfills.69a7b8a907a7ac9da988.js"></script>
+<script src="/main.12c3a04fa47641f902c2.js"></script>
+</body>
+</html>
