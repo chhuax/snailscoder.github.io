@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>高并发系统：数据迁移 - 蜗码</title>
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<link rel="canonical" href="https://snailscoder.com/2020/04/13/architect/114/">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<meta name="description" content="如何平滑地迁移数据库中的数据迁移过程需要满足以下几个目标： 迁移应该是在线的迁移，也就是在迁移的同时还会有数据的写入；数据应该保证完整性，也就是说在迁移之后需要保证新的库和旧的库的数据是一致的；迁移的过程需要做到可以回滚，这样一旦迁移的过程中出现问题，可以立刻回滚到源库不会对系统的可用性造成影响。一般来说，我们有两种方案可以做数据库的迁移。 “双写”方案 将新的库配置为源库的从库用来同步数据；如果">
+<meta property="og:type" content="website">
+<meta property="og:title" content="高并发系统：数据迁移">
+<meta property="og:url" content="https://snailscoder.com/2020/04/13/architect/114/index.html">
+<meta property="og:site_name" content="蜗码">
+<meta property="og:description" content="如何平滑地迁移数据库中的数据迁移过程需要满足以下几个目标： 迁移应该是在线的迁移，也就是在迁移的同时还会有数据的写入；数据应该保证完整性，也就是说在迁移之后需要保证新的库和旧的库的数据是一致的；迁移的过程需要做到可以回滚，这样一旦迁移的过程中出现问题，可以立刻回滚到源库不会对系统的可用性造成影响。一般来说，我们有两种方案可以做数据库的迁移。 “双写”方案 将新的库配置为源库的从库用来同步数据；如果">
+<meta property="og:image" content="https://snailscoder.com/2020/04/13/architect/114/images/icons/icon-128x128.png">
+<meta property="article:published_time" content="2020-04-13T15:40:20.000Z">
+<meta property="article:modified_time" content="2020-04-13T07:48:38.863Z">
+<meta property="article:author" content="蜗码">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="高并发">
+<meta property="article:tag" content="缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://snailscoder.com/2020/04/13/architect/114/images/icons/icon-128x128.png">
+
+<script type="application/ld+json">[{"@context":"http://schema.org","@type":"WebSite","publisher":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"url":"https://snailscoder.com","image":"https://snailscoder.com/images/icons/icon-128x128.png","description":"蜗牛编码，一步一个脚印的向自己的目标爬行。","author":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"inLanguage":{"@type":"Language","alternateName":"zh-Hans"}},{"@context":"http://schema.org","@type":"Article","articleSection":"架构","url":"https://snailscoder.com/2020/04/13/architect/114/","headline":"高并发系统：数据迁移","image":"https://snailscoder.com/images/icons/icon-128x128.png","datePublished":"2020-04-13T15:40:20.000Z","dateModified":"2020-04-13T07:48:38.863Z","keywords":"架构,高并发,缓存","description":"蜗牛编码，一步一个脚印的向自己的目标爬行。","publisher":{"@type":"Organization","name":"蜗码","logo":{"@type":"ImageObject","url":"https://snailscoder.com/images/icons/icon-128x128.png"}},"author":{"@type":"Person","name":"蜗码","description":"蜗牛，一步一个脚印的向自己的目标爬行.","image":"https://snailscoder.com/images/icons/icon-128x128.png"},"inLanguage":{"@type":"Language","alternateName":"zh-Hans"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://snailscoder.com/2020/04/13/architect/114/"}}]</script>
+
+
+<link href="//fonts.googleapis.com/css?family=Baloo+Bhaijaan|Inconsolata|Josefin+Sans|Montserrat" rel="stylesheet">
+<link href="//unpkg.com/gitalk/dist/gitalk.css" rel="stylesheet">
+<link href="/styles.e4c22be5bb2c26eab146.css" rel="stylesheet">
+
+<link rel="stylesheet" href="/theme.2e79e33aa2410c55e2e1.css" is="theme">
+
+
+<script src="/config.284714453df0c4abf670.js"></script>
+
+
+<script async src="//www.googletagmanager.com/gtag/js?id=ca-pub-5041852716594969"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config','ca-pub-5041852716594969');</script>
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+<body lang="zh-Hans">
+<is-a></is-a>
+<script src="//unpkg.com/gitalk/dist/gitalk.min.js"></script>
+<script src="//blogimg-1254014761.cos.ap-beijing.myqcloud.com/js/md5.min.js"></script>
+<script type="text/x-mathjax-config">MathJax.Hub.Config({
+  showProcessingMessages: false,
+  messageStyle: 'none',
+  tex2jax: { inlineMath: [['s;,'s;], ['\\(','\\)']] }
+})</script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script src="/runtime.1720a40670866f12654e.js"></script>
+<script src="/polyfills.69a7b8a907a7ac9da988.js"></script>
+<script src="/main.12c3a04fa47641f902c2.js"></script>
+</body>
+</html>
