@@ -11,4 +11,3 @@ Disallow: /vendors/
 Disallow: /fancybox/
 
 Sitemap: https://snailscoder.com/sitemap.xml
-Sitemap: https://snailscoder.com/baidusitemap.xml
